@@ -4,56 +4,55 @@ var path = require('path')
 var mime = require('mime')
 var chatServer = require('./lib/chat_server')
 
-
 var cache = {}
 
 // err response.
-function send404(response){
-    response.writeHead(404,{'Content-Type':'text/plain'})
+function send404(response) {
+    response.writeHead(404, { 'Content-Type': 'text/plain' })
     response.write('Error 404: resource not found.')
     response.end()
 }
 
 // file content response.
-function sendFile(response, filePath, fileContents){
-    response.writeHead(200,{'content-Type':mime.lookup(path.basename(filePath))})
+function sendFile(response, filePath, fileContents) {
+    response.writeHead(200, { 'content-Type': mime.lookup(path.basename(filePath)) })
     response.end(fileContents)
 }
 
-function serveStatic(response,cache,absPath){
-    if(cache[absPath]){
-        sendFile(response,absPath,cache[absPath])
-    }else{
-        fs.exists(absPath,function(exists){
-            if(exists){
-                fs.readFile(absPath,function(err,data){
-                    if(err){
+function serveStatic(response, cache, absPath) {
+    if (cache[absPath]) {
+        sendFile(response, absPath, cache[absPath])
+    } else {
+        fs.exists(absPath, function (exists) {
+            if (exists) {
+                fs.readFile(absPath, function (err, data) {
+                    if (err) {
                         return send404(response)
-                    }else{
+                    } else {
                         cache[absPath] = data
-                        sendFile(response,absPath,data)
+                        sendFile(response, absPath, data)
                     }
                 })
             }
         })
     }
 }
-try{
-    var server = http.createServer(function(request,response){
+try {
+    var server = http.createServer(function (request, response) {
         var filePath = false
-        if(request.url == '/'){
+        if (request.url == '/') {
             filePath = 'public/index.html'
-        }else{
+        } else {
             filePath = 'public' + request.url
         }
         var absPath = './' + filePath
-        serveStatic(response,cache,absPath)
+        serveStatic(response, cache, absPath)
     })
-    
-    server.listen(3000,function(){
+
+    server.listen(3000, function () {
         console.log('Server listening on port 3000.')
     })
-    // chatServer.listen(server)
-}catch(e){
+    chatServer.listen(server)
+} catch (e) {
     console.log(e)
 }
